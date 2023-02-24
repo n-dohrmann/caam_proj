@@ -14,9 +14,7 @@
 int main(int argc, char** argv) {
 
 
-	Vector4d v(1,1,1,1);
-	Vector4d w(2,2,2,2);
-
+	Vector4d v(0,0,1,1);
 	Vector2d e(0,0);
 
 	int id = 1;
@@ -24,8 +22,20 @@ int main(int argc, char** argv) {
 	// create a new pedestrian p
 	ped p(id, v, e, 10, 10, 120);
 
-	p.print();
+	/* p.print(); */
 
+	point p1(1,0);
+	point p2(0,1);
+
+	line l(p1, p2);
+
+	l.print();
+	
+	cout << endl;
+
+	double dist = nearest_point(p, l);
+
+	cout << "The distance is: " << dist << endl;
 
 	return 0;
 
