@@ -14,7 +14,7 @@
 int main(int argc, char** argv) {
 
 
-	Vector4d v(0,0,1,1);
+	Vector4d v(3,2,1,1);
 	Vector2d e(0,0);
 
 	int id = 1;
@@ -24,8 +24,8 @@ int main(int argc, char** argv) {
 
 	/* p.print(); */
 
-	point p1(1,0);
-	point p2(0,1);
+	point p1(1,1);
+	point p2(0,0);
 
 	line l(p1, p2);
 

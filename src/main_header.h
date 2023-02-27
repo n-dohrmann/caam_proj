@@ -17,6 +17,13 @@ using std::pair;
 
 using namespace Eigen;
 
+
+// CONSTANTS
+
+
+
+//
+
 class point
 {
 	public:
@@ -40,6 +47,9 @@ class point
 
 class line
 {
+	// in the simulation, each border will be a line (no non-linear boundaries)
+	// so it might not be necessary to even have a separate class for them? 
+	// The objects themselves can be called borders, though
 	public:
 		point p1, p2;
 
@@ -172,3 +182,5 @@ double nearest_point(ped p, line l)
 		
 	return sqrt(dx * dx + dy * dy);
 }
+
+
