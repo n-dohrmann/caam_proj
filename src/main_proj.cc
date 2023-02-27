@@ -37,6 +37,9 @@ int main(int argc, char** argv) {
 
 	cout << "The distance is: " << dist << endl;
 
+	Vector2d dd = p.desired_dir;
+	cout << "desired dir\n" << dd << endl;
+
 	return 0;
 
 }

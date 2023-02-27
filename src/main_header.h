@@ -17,11 +17,9 @@ using std::pair;
 
 using namespace Eigen;
 
-
 // CONSTANTS
-
-
-
+const double RELAX_TIME = 0.5E0;
+const double dt = 2.0E0;
 //
 
 class point
@@ -80,6 +78,7 @@ class ped
 		Vector4d y;
 		Vector2d desired_loc;
 		double desired_speed;
+		Vector2d desired_dir;
 		double max_speed;
 		double field_of_view;
 
@@ -98,7 +97,8 @@ class ped
 			desired_speed = desired_speed_in;
 			max_speed = max_speed_in;
 			field_of_view = field_of_view_in;
-			get_current_speed();
+			update_current_speed();
+			update_desired_dir();
 		}
 
 		Vector2d get_pos()
@@ -112,16 +112,28 @@ class ped
 			return point(y[0],y[1]);
 		}
 
-		Vector2d get_vel()
+		Vector2d get_vel() const
 		{
 			Vector2d v(y[2],y[3]);
 			return v;
 		}
 
-		void get_current_speed()
+		void update_current_speed()
 		{
 			Vector2d v(y[2],y[3]);
 			current_speed = v.norm();
+		}
+
+		void update_desired_dir()
+		{
+			Vector2d v = desired_loc - get_pos();
+			desired_dir = v / v.norm();
+		}
+
+		void update()
+		{
+			update_current_speed();
+			update_desired_dir();
 		}
 
 		void print()
@@ -131,7 +143,7 @@ class ped
 			cout << "Desired Location:\n" << desired_loc[0]
 					<< endl << desired_loc[1] << endl;
 			cout << "Velocity:\n" << y[2] << endl << y[3] << endl;
-			get_current_speed();
+			update_current_speed();
 			cout << "Current Speed: " << current_speed << endl;
 			cout << "Desired Speed: " << desired_speed << endl;
 			cout << "Max Speed: " << max_speed << endl;
@@ -144,7 +156,6 @@ Vector2d ped_vec_A2B(ped pedA, ped pedB)
 {
 	// returns the vector from A to B
 	return pedB.get_pos() - pedA.get_pos();
-
 }
 
 double nearest_point(ped p, line l)
@@ -183,4 +194,33 @@ double nearest_point(ped p, line l)
 	return sqrt(dx * dx + dy * dy);
 }
 
+Vector2d drift_acc(ped& p)
+{
+	p.update();
+
+	Vector2d difference = p.desired_speed * p.desired_dir -
+						  p.get_vel();
+
+	return difference / RELAX_TIME;
+}
+
+double b_parameter(const ped& A, const ped& B)
+{
+	Vector2d rab = ped_vec_A2B(A, B);
+	double sum = rab.norm();
+	sum += (rab - B.get_vel().norm() * dt * B.desired_dir).norm();
+	sum = sum * sum;
+	sum -= pow(B.get_vel().norm() * dt , 2);
+	return sum;
+}
+
+Vector2d interpersonal_force(ped& A, ped& B, double scale_param)
+{
+	A.update();
+	B.update();
+
+	double b = b_parameter(A, B);
+
+
+}
 
