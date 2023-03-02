@@ -224,9 +224,9 @@ double b_parameter(const ped& A, const ped& B)
 }
 
 Vector2d interpersonal_force(ped& A,
-							 ped& B,
-							 double V0,
-							 double sigma)
+                             ped& B,
+                             double V0,
+                             double sigma)
 {
 	A.update();
 	B.update();
@@ -248,16 +248,16 @@ Vector2d interpersonal_force(ped& A,
 
 	// directional changes
 	double db_drx =   2 * rx
-					+ 2 * (rx - qx)
-					+ 2 * rx * pow(rx*rx + ry*ry, -0.5)
-					  * pow((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy), 0.5)
-					+ pow(rx*rx + ry*ry, 0.5) * pow(2*(rx - qx), -0.5);
+                  + 2 * (rx - qx)
+                  + 2 * rx * pow(rx*rx + ry*ry, -0.5)
+                  * pow((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy), 0.5)
+                  + pow(rx*rx + ry*ry, 0.5) * pow(2*(rx - qx), -0.5);
 
 	double db_dry =   2 * ry
-		            + 2 * (ry - qy)
-					+ 2 * ry * pow(rx*rx + ry*ry, -0.5)
-					  * pow((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy), 0.5)
-					+ pow(rx*rx + ry*ry, 0.5) * pow(2*(ry - qy), -0.5);
+                  + 2 * (ry - qy)
+                  + 2 * ry * pow(rx*rx + ry*ry, -0.5)
+                  * pow((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy), 0.5)
+                  + pow(rx*rx + ry*ry, 0.5) * pow(2*(ry - qy), -0.5);
 
 
 	Vector2d F(pre_factor * db_drx, pre_factor * db_dry);
@@ -266,8 +266,8 @@ Vector2d interpersonal_force(ped& A,
 
 Vector2d border_force(ped& A,
                       line& border,
-					  double U0,
-					  double R)
+                      double U0,
+                      double R)
 {
 	// check sign!!
 	Vector2d nearest = nearest_point(A, border);
@@ -301,12 +301,12 @@ double g_parameter(ped& A, Vector2d omega)
 
 Vector2d total_force_calc(ped& p,
 		                  int index,
-						  vector<reference_wrapper<ped>> pedestrians,
-						  vector<reference_wrapper<line>> borders,
-						  double V0,
-						  double U0,
-						  double sigma,
-						  double R)
+                      vector<reference_wrapper<ped>> pedestrians,
+                      vector<reference_wrapper<line>> borders,
+                      double V0,
+                      double U0,
+                      double sigma,
+                      double R)
 {
 	// gives back a vector of the total *scaled* forces F on a single
 	// pedestrian. In a professional implementation, the code should exploit
@@ -355,13 +355,13 @@ void integrator(vector<reference_wrapper<ped>> pedestrians,
 	for (ped& p : pedestrians) {
 		p.update();
 		forces.push_back(total_force_calc(p, 
-					                      index, 
-										  pedestrians, 
-										  borders,
-										  V0,
-										  U0,
-										  sigma,
-										  R));
+                                      index, 
+                                      pedestrians, 
+                                      borders,
+                                      V0,
+                                      U0,
+                                      sigma,
+                                      R));
 		++index;
 	}
 
