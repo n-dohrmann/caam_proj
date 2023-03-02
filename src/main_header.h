@@ -314,6 +314,9 @@ Vector2d total_force_calc(ped& p,
 	// take the longer, more expensive route for simplicity.
 	Vector2d force(0,0);
 
+	// add drift acceleration
+	force = force + drift_acc(p);
+
 	// get all inter-pedestrian forces
 	for (unsigned long i = 0; i < pedestrians.size(); ++i) {
 		if ( (unsigned long)index == i ) {
