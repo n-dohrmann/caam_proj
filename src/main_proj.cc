@@ -12,20 +12,19 @@
  */
 
 int main(int argc, char** argv) {
-
-
-	Vector4d v(3,2,1,1);
-	Vector2d e(0,0);
+	//
+	Vector4d v(0,0,1,1);
+	Vector2d e(1,1);
 
 	int id = 1;
 
 	// create a new pedestrian p
-	ped p(id, v, e, 10, 10, 120);
+	ped p(id, v, e, 10, 10, 100, false);
 
 	/* p.print(); */
 
-	point p1(1,1);
-	point p2(0,0);
+	point p1(1,0);
+	point p2(0,1);
 
 	line l(p1, p2);
 
@@ -33,9 +32,9 @@ int main(int argc, char** argv) {
 	
 	cout << endl;
 
-	double dist = nearest_point(p, l);
+	Vector2d np = nearest_point(p, l);
 
-	cout << "The distance is: " << dist << endl;
+	cout << "The nearest point is: " << np << endl;
 
 	Vector2d dd = p.desired_dir;
 	cout << "desired dir\n" << dd << endl;
