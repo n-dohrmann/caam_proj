@@ -78,6 +78,7 @@ class ped
 		Vector2d desired_loc;
 		double desired_speed;
 		Vector2d desired_dir;
+		Vector2d preferred_velocity;
 		double max_speed;
 		double field_of_view;
 
@@ -103,6 +104,7 @@ class ped
 			behavioral = behavioral_in;
 			update_current_speed();
 			update_desired_dir(behavioral);
+			preferred_velocity = Vector2d(y[2], y[3]);
 		}
 
 		Vector2d get_pos()
@@ -135,6 +137,7 @@ class ped
 				desired_dir = v / v.norm();
 			} else {
 				cout << "ERR: implement behavioral functionality!" << endl;
+				std::_Exit(EXIT_FAILURE);
 			}
 		}
 
@@ -287,7 +290,7 @@ double w_adjustment(Vector2d& e, Vector2d& f, double phi)
 	return 0.5;
 }
 
-double g_parameter(ped& A, Vector2d& omega)
+double g_parameter(ped& A, Vector2d omega)
 {
 	double ratio = A.max_speed / omega.norm();
 	if ( 1 <= ratio ) {
@@ -296,8 +299,49 @@ double g_parameter(ped& A, Vector2d& omega)
 	return ratio;
 }
 
+Vector2d total_force_calc(ped& p,
+		                  int index,
+						  vector<reference_wrapper<ped>> pedestrians,
+						  vector<reference_wrapper<line>> borders,
+						  double V0,
+						  double U0,
+						  double sigma,
+						  double R)
+{
+	// gives back a vector of the total *scaled* forces F on a single
+	// pedestrian. In a professional implementation, the code should exploit
+	// force symmetries where that can be done, but this implementation will
+	// take the longer, more expensive route for simplicity.
+	Vector2d force(0,0);
+
+	// get all inter-pedestrian forces
+	for (unsigned long i = 0; i < pedestrians.size(); ++i) {
+		if ( (unsigned long)index == i ) {
+			continue;
+		}
+		Vector2d temp_force = interpersonal_force(p, pedestrians[i], V0, sigma);
+		force = force 
+			    + w_adjustment(p.desired_dir, temp_force, p.field_of_view) 
+				* temp_force;
+	}
+
+	// get all pedestrian-border forces
+	for (unsigned long i = 0; i < borders.size(); ++i) {
+		Vector2d temp_force = border_force(p, borders[i], U0, R);
+		force = force 
+			    + w_adjustment(p.desired_dir, temp_force, p.field_of_view) 
+				* temp_force;
+	}
+
+	return force;
+}
+
 void integrator(vector<reference_wrapper<ped>> pedestrians,
 				vector<reference_wrapper<line>> borders,
+				double V0,
+				double U0,
+				double sigma,
+				double R,
 				bool Euler)
 {
 	// steps: Calculate all forces on every pedestrian, then with these forces
@@ -305,8 +349,39 @@ void integrator(vector<reference_wrapper<ped>> pedestrians,
 	// pedestrian.
 
 	// make a vector that holds the forces on each pedestrian
-	vector<reference_wrapper<Vector2d>> forces;
+	vector<Vector2d> forces;
 
+	int index = 0;
 	for (ped& p : pedestrians) {
-		forces
+		p.update();
+		forces.push_back(total_force_calc(p, 
+					                      index, 
+										  pedestrians, 
+										  borders,
+										  V0,
+										  U0,
+										  sigma,
+										  R));
+		++index;
+	}
+
+	index = 0;
+	// next, perform the integration on each pedestrian with the forces
+	// that were just found.
+	if ( Euler ) {
+		for (ped& p : pedestrians) {
+			// update the position vector
+			p.y[0] += p.y[2] * dt;
+			p.y[1] += p.y[3] * dt;
+
+			// make sure to enforce the speed limit
+			double g = g_parameter(p, p.get_vel());
+			p.y[2] += forces[index][0] * g * dt;
+			p.y[3] += forces[index][1] * g * dt;
+			++index;
+		}
+	} else {
+		cout << "implement RK method!" << endl;
+		std::_Exit(EXIT_FAILURE);
+	}
 }
