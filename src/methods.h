@@ -232,7 +232,6 @@ void integrator(vector<ped> &pedestrians,
 }
 
 vector<ped> initialize_pedestrians(int num_peds,
-                                   double desired_vel,
                                    vector<line> &borders,
                                    point lower_boundary,
                                    point upper_boundary,
