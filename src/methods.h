@@ -138,8 +138,8 @@ double g_parameter(ped& A, Vector2d omega)
 
 Vector2d total_force_calc(ped& p,
 		                  int index,
-                      vector<reference_wrapper<ped>> pedestrians,
-                      vector<reference_wrapper<line>> borders,
+                      vector<ped> &pedestrians,
+                      vector<line> &borders,
                       double V0,
                       double U0,
                       double sigma,
@@ -176,8 +176,8 @@ Vector2d total_force_calc(ped& p,
 	return force;
 }
 
-void integrator(vector<reference_wrapper<ped>> pedestrians,
-				vector<reference_wrapper<line>> borders,
+void integrator(vector<ped> &pedestrians,
+				vector<line> &borders,
 				double V0,
 				double U0,
 				double sigma,
@@ -219,6 +219,11 @@ void integrator(vector<reference_wrapper<ped>> pedestrians,
 			p.y[2] += forces[index][0] * g * dt;
 			p.y[3] += forces[index][1] * g * dt;
 			++index;
+
+			// update the trajectory
+			p.traj.add_position(p.get_pos());
+			p.traj.add_velocity(p.get_vel());
+
 		}
 	} else {
 		cout << "implement RK method!" << endl;
@@ -243,16 +248,15 @@ vector<line> initialize_borders(vector<point> points)
 }
 
 void perform_simulation(
-                vector<ped> pedestrians,
-                vector<line> borders,
-                point lower_boundary,
-                point upper_boundary,
+                vector<ped> &pedestrians,
+                vector<line> &borders,
                 int time_steps,
                 string sim_name,
                 double V0,
                 double U0,
                 double sigma,
-                double R)
+                double R,
+				bool Euler)
 {
 	// note that the borders should be already constructed prior to
 	// calling this function
@@ -264,5 +268,22 @@ void perform_simulation(
 	// this might not be used, but it will be reported in the output.
 	double total_time = time_steps * dt;
 
+	for (int time = 0; time < time_steps; ++time)
+	{
+		// call integration - this should be all that's necessary?
+		integrator(pedestrians,
+				   borders,
+				   V0,
+				   U0,
+				   sigma,
+				   R,
+				   Euler);
+	}
+
+	// write trajectories to file
+	for (auto& p : pedestrians)
+	{
+		p.traj.to_json(p.id, sim_name);
+	}
 
 }

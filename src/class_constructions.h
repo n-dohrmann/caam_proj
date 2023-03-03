@@ -69,6 +69,75 @@ class line
 		}
 };
 
+class trajectory
+{
+	public:
+		vector<Vector2d> positions;
+		vector<Vector2d> velocities;
+
+		trajectory() {}
+
+		void add_position(Vector2d p)
+		{
+			positions.push_back(p);
+		}
+
+		void add_velocity(Vector2d v)
+		{
+			velocities.push_back(v);
+		}
+
+		void to_json(int id, string sim_name)
+		{
+			// writes each of the trajectory points to a
+			// JSON FILE
+			std::system(("mkdir -p " + sim_name).c_str());
+			string file_name = "p" + std::to_string(id) + "_traj.json";
+			file_name = "./" + sim_name + "/" + file_name;
+			std::ofstream out {file_name};
+
+			int n = (int)positions.size();
+			int index = 0;
+
+			out << "{" << endl;
+			out << "\"id\" : " << id << "," << endl;
+			out << "\"steps\" : " << n << "," << endl;
+
+			out << "\"positions\" : [" << endl;
+			for (auto& p : positions)
+			{
+				if (index != n - 1) {
+					out << "\"" <<  p[0] << " " << p[1] << "\"," << endl;
+				} else {
+					out << "\"" << p[0] << " " << p[1] << "\"" << endl;
+				}
+				++index;
+			}
+			out << "]," << endl;
+
+			index = 0;
+
+			out << "\"velocities\" : [" << endl;
+			for (auto& v : velocities)
+			{
+				if (index != n - 1) {
+					out << "\"" <<  v[0] << " " << v[1] << "\"," << endl;
+				} else {
+					out << "\"" << v[0] << " " << v[1] << "\"" << endl;
+				}
+				++index;
+			}
+			out << "]" << endl;
+
+			out << "}" << endl;
+
+			out.close();
+
+		}
+
+		~trajectory() {};
+};
+
 class ped
 {
 	public:
@@ -86,6 +155,7 @@ class ped
 		// whether or not the pedestrian will follow
 		// the BH model for updating their desired direction
 		bool behavioral;
+		trajectory traj;
 
 		ped (int id_in,
 			 Vector4d y_in,
@@ -105,6 +175,8 @@ class ped
 			update_current_speed();
 			update_desired_dir(behavioral);
 			preferred_velocity = Vector2d(y[2], y[3]);
+			traj.add_position(get_pos());
+			traj.add_velocity(get_vel());
 		}
 
 		Vector2d get_pos()
@@ -161,4 +233,7 @@ class ped
 			cout << "Field of View: " << field_of_view  << endl;
 			cout << endl;
 		}
+
+		// add to destructor if needed
+		~ped() {};
 };
