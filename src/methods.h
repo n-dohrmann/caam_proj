@@ -231,6 +231,86 @@ void integrator(vector<ped> &pedestrians,
 	}
 }
 
+vector<ped> initialize_pedestrians(int num_peds,
+                                   double desired_vel,
+                                   vector<line> &borders,
+                                   point lower_boundary,
+                                   point upper_boundary,
+                                   bool long_hallway,
+								   bool behavioral)
+{
+	// the two kinds of simulations to run are the long hallway and the narrow
+	// corridor
+	vector<ped> pedestrians;
+
+	if (num_peds % 2 != 0) {
+		cout << "use an even number of pedestrians for convenience!" << endl;
+		std::_Exit(EXIT_FAILURE);
+	}
+
+	// geometry stuff for the simulation arena
+	double dx = upper_boundary.x - lower_boundary.x;
+	double dy = upper_boundary.y - lower_boundary.y;
+
+	// give a buffer so that  the pedestrians are not placed directly
+	// on top of walls
+	double density = num_peds  / (2 * (dy - 5));
+
+	// random number generator
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	std::default_random_engine generator (seed);
+	// distribution values from Moussaid
+	std::normal_distribution<double> distribution (1.3,0.2);
+	double gen_desired_speed;
+	double px, py, vx, vy, des_x, des_y;
+	double max_speed;
+	// standardized value for the field of view
+	double fov = 100;
+
+	if ( long_hallway ) {
+		for (int id = 0; id < num_peds; ++id)
+		{
+			gen_desired_speed = abs(distribution(generator));
+			max_speed = 1.3 * gen_desired_speed;
+
+			// alternatively place the people left and right
+			px = (id % 2) * dx;
+			py = 2 + id * density;
+
+			des_x = ((id+1) % 2) * dx;
+			des_y = dy - (2 + py);
+
+			Vector2d desired_loc(des_x, des_y);
+			
+			// init velocity and desired direction
+			Vector2d vel(des_x - px, des_y - py);
+			Vector2d desired_dir = vel / vel.norm();
+			vel = gen_desired_speed * vel / vel.norm();
+
+			Vector4d y(px, py, vel[0], vel[1]);
+
+			ped p(id,
+			      y,
+			      desired_loc,
+			      gen_desired_speed,
+			      max_speed,
+			      fov,
+			      behavioral);
+			
+			pedestrians.push_back(p);
+
+		}
+
+	} else {
+		cout << "implement the narrow corridor" << endl;
+		std::_Exit(EXIT_FAILURE);
+
+	}
+
+	return pedestrians;
+}
+
+
 vector<line> initialize_borders(vector<point> points)
 {
 	vector<line> borders;
