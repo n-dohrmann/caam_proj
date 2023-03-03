@@ -1,4 +1,4 @@
-#include "main_header.h"
+#include "methods.h"
 
 /* CAAM 282 Final Project Main File
  *
