@@ -17,12 +17,13 @@ using std::ctype;
 using std::vector;
 using std::reference_wrapper;
 using std::pair;
+using std::set;
 
 using namespace Eigen;
 
 // CONSTANTS
 const double RELAX_TIME = 0.5E0;
-const double dt = 2.0E0;
+const double dt = 2.5E-1;
 //
 
 class point

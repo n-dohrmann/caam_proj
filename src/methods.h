@@ -69,6 +69,21 @@ Vector2d interpersonal_force(ped& A,
 	B.update();
 
 	double b = b_parameter(A, B);
+
+	// simple versiion
+
+	/* Vector2d rab = ped_vec_A2B(A, B); */
+	/* double distance = rab.norm(); */
+
+	/* return (-V0 / sigma) * exp(-distance/sigma) * rab; */
+
+	// simple version end
+
+	if ( isnan(b) ) {
+		cout << "Err - have nan values! at b" << endl;
+		std::_Exit(EXIT_FAILURE);
+	}
+
 	double db_pre = 1 / (8 * b);
 	Vector2d rab = ped_vec_A2B(A, B);
 
@@ -79,23 +94,37 @@ Vector2d interpersonal_force(ped& A,
 	double rx = rab[0];
 	double ry = rab[1];
 
+	if ( isnan(rx) or isnan(ry) ) {
+		cout << "Err - have nan values! at rx ry" << endl;
+		std::_Exit(EXIT_FAILURE);
+	}
+
 	Vector2d q = rab - B.get_vel().norm() * dt * B.desired_dir;
 	double qx = q[0];
 	double qy = q[1];
 
+	if ( isnan(qx) or isnan(qy) ) {
+		cout << "Err - have nan values! at qx qy" << endl;
+		std::_Exit(EXIT_FAILURE);
+	}
+
 	// directional changes
 	double db_drx =   2 * rx
                   + 2 * (rx - qx)
-                  + 2 * rx * pow(rx*rx + ry*ry, -0.5)
-                  * pow((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy), 0.5)
-                  + pow(rx*rx + ry*ry, 0.5) * pow(2*(rx - qx), -0.5);
+                  + 2 * rx / sqrt(rx*rx + ry*ry)
+                  * sqrt(abs((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy)))
+                  + sqrt(rx*rx + ry*ry) / sqrt(abs(2*(rx - qx)));
 
 	double db_dry =   2 * ry
                   + 2 * (ry - qy)
-                  + 2 * ry * pow(rx*rx + ry*ry, -0.5)
-                  * pow((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy), 0.5)
-                  + pow(rx*rx + ry*ry, 0.5) * pow(2*(ry - qy), -0.5);
+                  + 2 * ry / sqrt(rx*rx + ry*ry)
+                  * sqrt(abs((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy)))
+                  + sqrt(rx*rx + ry*ry) / sqrt(abs(2*(ry - qy)));
 
+	if (isnan(db_drx) or isnan(db_dry)) {
+		cout << "Err - have nan values! at db drxy" << endl;
+		std::_Exit(EXIT_FAILURE);
+	}
 
 	Vector2d F(pre_factor * db_drx, pre_factor * db_dry);
 	return F;
@@ -258,6 +287,7 @@ vector<ped> initialize_pedestrians(int num_peds,
 	// random number generator
 	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 	std::default_random_engine generator (seed);
+	std::uniform_real_distribution<> uniform(0+1, dy-1);
 	// distribution values from Moussaid
 	std::normal_distribution<double> distribution (1.3,0.2);
 	double gen_desired_speed;
@@ -265,6 +295,7 @@ vector<ped> initialize_pedestrians(int num_peds,
 	double max_speed;
 	// standardized value for the field of view
 	double fov = 100;
+
 
 	if ( long_hallway ) {
 		for (int id = 0; id < num_peds; ++id)
@@ -274,10 +305,16 @@ vector<ped> initialize_pedestrians(int num_peds,
 
 			// alternatively place the people left and right
 			px = (id % 2) * dx;
-			py = 2 + id * density;
+			py = 2 + (id*(0.9*dy)/num_peds);
 
 			des_x = ((id+1) % 2) * dx;
-			des_y = dy - (2 + py);
+			/* des_y = dy - (2 + py); */
+
+			// add check that this is not too close to
+			// another pedestrian's desire point!!!!!!
+			des_y = uniform(generator);
+
+			/* des_y = py + 2 * pow(-1,id); */
 
 			Vector2d desired_loc(des_x, des_y);
 			
