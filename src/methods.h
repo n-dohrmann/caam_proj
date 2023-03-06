@@ -45,7 +45,8 @@ Vector2d drift_acc(ped& p)
 {
 	p.update();
 
-	Vector2d difference = p.desired_speed * p.desired_dir - p.get_vel();
+	Vector2d difference = p.desired_speed * p.desired_dir.normalized() 
+		- p.get_vel();
 
 	return difference / RELAX_TIME;
 }
@@ -72,62 +73,62 @@ Vector2d interpersonal_force(ped& A,
 
 	// simple versiion
 
-	/* Vector2d rab = ped_vec_A2B(A, B); */
-	/* double distance = rab.norm(); */
+	Vector2d rab = ped_vec_A2B(A, B);
+	double distance = rab.norm();
 
-	/* return (-V0 / sigma) * exp(-distance/sigma) * rab; */
+	return (-V0 / sigma) * exp(-distance/sigma) * rab;
 
 	// simple version end
 
-	if ( isnan(b) ) {
-		cout << "Err - have nan values! at b" << endl;
-		std::_Exit(EXIT_FAILURE);
-	}
+	/* if ( isnan(b) ) { */
+	/* 	cout << "Err - have nan values! at b" << endl; */
+	/* 	std::_Exit(EXIT_FAILURE); */
+	/* } */
 
-	double db_pre = 1 / (8 * b);
-	Vector2d rab = ped_vec_A2B(A, B);
+	/* double db_pre = 1 / (8 * b); */
+	/* Vector2d rab = ped_vec_A2B(A, B); */
 
-	// check sign!!! Should be negative since I defined rab to be the opposite
-	// from Helbing and Molnar
-	double pre_factor = -V0 * db_pre * exp(-b/sigma) / sigma;
+	/* // check sign!!! Should be negative since I defined rab to be the opposite */
+	/* // from Helbing and Molnar */
+	/* double pre_factor = -V0 * db_pre * exp(-b/sigma) / sigma; */
 
-	double rx = rab[0];
-	double ry = rab[1];
+	/* double rx = rab[0]; */
+	/* double ry = rab[1]; */
 
-	if ( isnan(rx) or isnan(ry) ) {
-		cout << "Err - have nan values! at rx ry" << endl;
-		std::_Exit(EXIT_FAILURE);
-	}
+	/* if ( isnan(rx) or isnan(ry) ) { */
+	/* 	cout << "Err - have nan values! at rx ry" << endl; */
+	/* 	std::_Exit(EXIT_FAILURE); */
+	/* } */
 
-	Vector2d q = rab - B.get_vel().norm() * dt * B.desired_dir;
-	double qx = q[0];
-	double qy = q[1];
+	/* Vector2d q = rab - B.get_vel().norm() * dt * B.desired_dir; */
+	/* double qx = q[0]; */
+	/* double qy = q[1]; */
 
-	if ( isnan(qx) or isnan(qy) ) {
-		cout << "Err - have nan values! at qx qy" << endl;
-		std::_Exit(EXIT_FAILURE);
-	}
+	/* if ( isnan(qx) or isnan(qy) ) { */
+	/* 	cout << "Err - have nan values! at qx qy" << endl; */
+	/* 	std::_Exit(EXIT_FAILURE); */
+	/* } */
 
-	// directional changes
-	double db_drx =   2 * rx
-                  + 2 * (rx - qx)
-                  + 2 * rx / sqrt(rx*rx + ry*ry)
-                  * sqrt(abs((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy)))
-                  + sqrt(rx*rx + ry*ry) / sqrt(abs(2*(rx - qx)));
+	/* // directional changes */
+	/* double db_drx =   2 * rx */
+                  /* + 2 * (rx - qx) */
+                  /* + 2 * rx / sqrt(rx*rx + ry*ry) */
+                  /* * sqrt(abs((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy))) */
+                  /* + sqrt(rx*rx + ry*ry) / sqrt(abs(2*(rx - qx))); */
 
-	double db_dry =   2 * ry
-                  + 2 * (ry - qy)
-                  + 2 * ry / sqrt(rx*rx + ry*ry)
-                  * sqrt(abs((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy)))
-                  + sqrt(rx*rx + ry*ry) / sqrt(abs(2*(ry - qy)));
+	/* double db_dry =   2 * ry */
+                  /* + 2 * (ry - qy) */
+                  /* + 2 * ry / sqrt(rx*rx + ry*ry) */
+                  /* * sqrt(abs((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy))) */
+                  /* + sqrt(rx*rx + ry*ry) / sqrt(abs(2*(ry - qy))); */
 
-	if (isnan(db_drx) or isnan(db_dry)) {
-		cout << "Err - have nan values! at db drxy" << endl;
-		std::_Exit(EXIT_FAILURE);
-	}
+	/* if (isnan(db_drx) or isnan(db_dry)) { */
+	/* 	cout << "Err - have nan values! at db drxy" << endl; */
+	/* 	std::_Exit(EXIT_FAILURE); */
+	/* } */
 
-	Vector2d F(pre_factor * db_drx, pre_factor * db_dry);
-	return F;
+	/* Vector2d F(pre_factor * db_drx, pre_factor * db_dry); */
+	/* return F; */
 }
 
 Vector2d border_force(ped& A,
@@ -166,7 +167,7 @@ double g_parameter(ped& A, Vector2d omega)
 }
 
 Vector2d total_force_calc(ped& p,
-		                  int index,
+                      int index,
                       vector<ped> &pedestrians,
                       vector<line> &borders,
                       double V0,
@@ -178,16 +179,26 @@ Vector2d total_force_calc(ped& p,
 	// pedestrian. In a professional implementation, the code should exploit
 	// force symmetries where that can be done, but this implementation will
 	// take the longer, more expensive route for simplicity.
-	Vector2d force(0,0);
+	/* Vector2d force(0.0,0.0); */
 
 	// add drift acceleration
-	force = force + drift_acc(p);
+	/* force = force + drift_acc(p); */
+
+	Vector2d force = drift_acc(p);
 
 	// get all inter-pedestrian forces
-	for (unsigned long i = 0; i < pedestrians.size(); ++i) {
-		if ( (unsigned long)index == i ) {
+	for (unsigned long i = 0; i < pedestrians.size(); ++i)
+	{
+		if ( (unsigned long)index == i )
+		{
 			continue;
 		}
+
+		if ( pedestrians[i].has_stopped )
+		{
+			continue;
+		}
+
 		Vector2d temp_force = interpersonal_force(p, pedestrians[i], V0, sigma);
 		force = force 
 			    + w_adjustment(p.desired_dir, temp_force, p.field_of_view) 
@@ -239,15 +250,24 @@ void integrator(vector<ped> &pedestrians,
 	// that were just found.
 	if ( Euler ) {
 		for (ped& p : pedestrians) {
-			// update the position vector
-			p.y[0] += p.y[2] * dt;
-			p.y[1] += p.y[3] * dt;
 
-			// make sure to enforce the speed limit
-			double g = g_parameter(p, p.get_vel());
-			p.y[2] += forces[index][0] * g * dt;
-			p.y[3] += forces[index][1] * g * dt;
-			++index;
+			if ( not p.has_stopped )
+			{
+				// update the position vector
+				p.y[0] += p.y[2] * dt;
+				p.y[1] += p.y[3] * dt;
+
+				// make sure to enforce the speed limit
+				double g = g_parameter(p, p.get_vel());
+				p.y[2] += forces[index][0] * g * dt;
+				p.y[3] += forces[index][1] * g * dt;
+
+				if ( (p.y[3] / abs(p.y[2]) >= 10 ) )
+				{
+					p.y[3] = -0.5 * p.y[3];
+				}
+				++index;
+			}
 
 			// update the trajectory
 			p.traj.add_position(p.get_pos());
@@ -308,12 +328,11 @@ vector<ped> initialize_pedestrians(int num_peds,
 			py = 2 + (id*(0.9*dy)/num_peds);
 
 			des_x = ((id+1) % 2) * dx;
+			des_y = uniform(generator);
 			/* des_y = dy - (2 + py); */
 
 			// add check that this is not too close to
 			// another pedestrian's desire point!!!!!!
-			des_y = uniform(generator);
-
 			/* des_y = py + 2 * pow(-1,id); */
 
 			Vector2d desired_loc(des_x, des_y);

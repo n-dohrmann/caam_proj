@@ -17,13 +17,13 @@ using std::ctype;
 using std::vector;
 using std::reference_wrapper;
 using std::pair;
-using std::set;
 
 using namespace Eigen;
 
 // CONSTANTS
 const double RELAX_TIME = 0.5E0;
 const double dt = 2.5E-1;
+const double stop_threshold = 0.5E0;
 //
 
 class point
@@ -160,6 +160,10 @@ class ped
 		bool behavioral;
 		trajectory traj;
 
+		// whether or not a pedestrian will be stopped in place
+		// (updated once they should be stopped)
+		bool has_stopped = false;
+
 		ped (int id_in,
 			 Vector4d y_in,
 			 Vector2d desired_loc_in,
@@ -216,10 +220,19 @@ class ped
 			}
 		}
 
+		void update_has_stopped()
+		{
+			if ( abs(y[0] - desired_loc[0]) <= stop_threshold )
+			{
+				has_stopped = true;
+			}
+		}
+
 		void update()
 		{
 			update_current_speed();
 			update_desired_dir(behavioral);
+			/* update_has_stopped(); */
 		}
 
 		void print()
