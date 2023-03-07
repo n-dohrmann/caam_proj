@@ -11,11 +11,11 @@
  * http://eigen.tuxfamily.org/index.php?title=Main_Page#Download
  */
 
-void trial_simulation()
+void trial_simulation(bool behavioral)
 {
 	// tester code for a first sample simulation
-	int num_peds = 30;
-	int time_steps = 300;
+	int num_peds = 40;
+	int time_steps = 225;
 	string sim_name = "trial_sim";
 
 	// trial parameters from Helbing and Molnar
@@ -51,7 +51,6 @@ void trial_simulation()
 	/* vector<line> borders; */
 
 	bool long_hallway = true;
-	bool behavioral = false;
 	vector<ped> pedestrians = initialize_pedestrians(num_peds,
                                                    borders,
                                                    lower,
@@ -73,15 +72,7 @@ void trial_simulation()
 
 int main(int argc, char** argv) {
 
-	/* trial_simulation(); */
-
-	vector<double> ls = linspace(0,10,11);
-
-	for (auto& l : ls)
-	{
-		cout << l << endl;
-	}
-
+	trial_simulation(false);
 
 	return 0;
 

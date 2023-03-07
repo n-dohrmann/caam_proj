@@ -1,5 +1,11 @@
 #include "class_constructions.h"
 
+// function declarations here for those that are needed
+Vector2d get_bh_direction(vector<ped> &pedestrians,
+                          int index,
+                          int num_angles);
+//
+
 Vector2d ped_vec_A2B(ped pedA, ped pedB)
 {
 	// returns the vector from A to B
@@ -51,6 +57,22 @@ Vector2d drift_acc(ped& p)
 	return difference / RELAX_TIME;
 }
 
+// version of the function for the BH model
+Vector2d drift_acc(ped& p,
+                   vector<ped> &pedestrians,
+                   int index,
+				   int num_angles)
+{
+	/* p.update(); */
+	Vector2d best_dir = get_bh_direction(pedestrians, index, num_angles);
+	p.update(best_dir.normalized());
+
+	Vector2d difference = p.desired_speed * p.desired_dir.normalized() 
+		- p.get_vel();
+
+	return difference / RELAX_TIME;
+}
+
 double b_parameter(const ped& A, const ped& B)
 {
 	Vector2d rab = ped_vec_A2B(A, B);
@@ -66,8 +88,11 @@ Vector2d interpersonal_force(ped& A,
                              double V0,
                              double sigma)
 {
-	A.update();
-	B.update();
+	/* if ( not A.behavioral ) */
+	/* { */
+	/* 	A.update(); */
+	/* 	B.update(); */
+	/* } */
 
 	double b = b_parameter(A, B);
 
@@ -179,12 +204,14 @@ Vector2d total_force_calc(ped& p,
 	// pedestrian. In a professional implementation, the code should exploit
 	// force symmetries where that can be done, but this implementation will
 	// take the longer, more expensive route for simplicity.
-	/* Vector2d force(0.0,0.0); */
+	Vector2d force(0.0,0.0);
 
 	// add drift acceleration
-	/* force = force + drift_acc(p); */
-
-	Vector2d force = drift_acc(p);
+	if ( p.behavioral ) {
+		force = drift_acc(p, pedestrians, index, 50);
+	} else {
+		force = drift_acc(p);
+	}
 
 	// get all inter-pedestrian forces
 	for (unsigned long i = 0; i < pedestrians.size(); ++i)
@@ -209,8 +236,8 @@ Vector2d total_force_calc(ped& p,
 	for (unsigned long i = 0; i < borders.size(); ++i) {
 		Vector2d temp_force = border_force(p, borders[i], U0, R);
 		force = force 
-			    + w_adjustment(p.desired_dir, temp_force, p.field_of_view) 
-				* temp_force;
+			    + (w_adjustment(p.desired_dir, temp_force, p.field_of_view) 
+				* temp_force);
 	}
 
 	return force;
@@ -233,7 +260,10 @@ void integrator(vector<ped> &pedestrians,
 
 	int index = 0;
 	for (ped& p : pedestrians) {
-		p.update();
+		if ( not p.behavioral )
+		{
+			p.update();
+		}
 		forces.push_back(total_force_calc(p, 
                                       index, 
                                       pedestrians, 
@@ -316,7 +346,6 @@ vector<ped> initialize_pedestrians(int num_peds,
 	// standardized value for the field of view
 	double fov = 100;
 
-
 	if ( long_hallway ) {
 		for (int id = 0; id < num_peds; ++id)
 		{
@@ -333,14 +362,14 @@ vector<ped> initialize_pedestrians(int num_peds,
 			/* des_y = dy - (2 + py); */
 
 			// add check that this is not too close to
-			// another pedestrian's desire point!!!!!!
+			// another pedestrian's desired point!!!!!!
 			/* des_y = py + 2 * pow(-1,id); */
 
 			Vector2d desired_loc(des_x, des_y);
 			
 			// init velocity and desired direction
 			Vector2d vel(des_x - px, des_y - py);
-			Vector2d desired_dir = vel / vel.norm();
+			/* Vector2d desired_dir = vel / vel.norm(); */
 			vel = gen_desired_speed * vel / vel.norm();
 
 			Vector4d y(px, py, vel[0], vel[1]);

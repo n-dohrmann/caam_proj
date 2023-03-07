@@ -26,6 +26,7 @@ const double dt = 2.5E-1;
 const double stop_threshold = 0.5E0;
 const double d_max = 5.0E0;
 const double dist_threshold = 0.1E0;
+const double num_angles = 100;
 /* #define M_PI           3.14159265358979323846 */
 //
 
@@ -194,7 +195,7 @@ class ped
 			field_of_view = field_of_view_in;
 			behavioral = behavioral_in;
 			update_current_speed();
-			update_desired_dir(behavioral);
+			update_desired_dir();
 			preferred_velocity = Vector2d(y[2], y[3]);
 			traj.add_position(get_pos());
 			traj.add_velocity(get_vel());
@@ -224,17 +225,10 @@ class ped
 			current_speed = v.norm();
 		}
 
-		void update_desired_dir(bool bh)
+		void update_desired_dir()
 		{
 			Vector2d v = desired_loc - get_pos();
 			desired_dir = v / v.norm();
-			if ( bh )
-			{
-				SF_desired_dir = desired_dir;
-				// need a way to get global pedestrian information
-				// to this point...
-				std::_Exit(EXIT_FAILURE);
-			}
 		}
 
 		void update_has_stopped()
@@ -248,8 +242,16 @@ class ped
 		void update()
 		{
 			update_current_speed();
-			update_desired_dir(behavioral);
+			update_desired_dir();
 			/* update_has_stopped(); */
+		}
+
+		void update(Vector2d dir)
+		{
+			update_current_speed();
+			desired_dir = dir;
+			Vector2d v = desired_loc - get_pos();
+			SF_desired_dir = v / v.norm();
 		}
 
 		void print()
