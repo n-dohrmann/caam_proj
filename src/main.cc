@@ -14,8 +14,8 @@
 void trial_simulation()
 {
 	// tester code for a first sample simulation
-	int num_peds = 10;
-	int time_steps = 1000;
+	int num_peds = 30;
+	int time_steps = 300;
 	string sim_name = "trial_sim";
 
 	// trial parameters from Helbing and Molnar
@@ -73,7 +73,15 @@ void trial_simulation()
 
 int main(int argc, char** argv) {
 
-	trial_simulation();
+	/* trial_simulation(); */
+
+	vector<double> ls = linspace(0,10,11);
+
+	for (auto& l : ls)
+	{
+		cout << l << endl;
+	}
+
 
 	return 0;
 

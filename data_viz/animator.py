@@ -6,11 +6,14 @@ import json
 import pickle as pkl
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+import os
 
 
 ped_positions = []
 
-for i in range(10):
+num_peds = int(os.popen("grep 'int num_peds' main.cc | tr -d ';' | awk -F ' ' '{print $4}'").read())
+
+for i in range(num_peds):
     with open(f"../src/trial_sim/p{i}_traj.json") as f:
         dat = json.load(f)
 

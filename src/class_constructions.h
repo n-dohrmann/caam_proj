@@ -24,6 +24,9 @@ using namespace Eigen;
 const double RELAX_TIME = 0.5E0;
 const double dt = 2.5E-1;
 const double stop_threshold = 0.5E0;
+const double d_max = 5.0E0;
+const double dist_threshold = 0.1E0;
+/* #define M_PI           3.14159265358979323846 */
 //
 
 class point
@@ -90,7 +93,7 @@ class trajectory
 			velocities.push_back(v);
 		}
 
-		void to_json(int id, string sim_name)
+		void to_json(int id, Vector2d desired_loc, string sim_name)
 		{
 			// writes each of the trajectory points to a
 			// JSON FILE
@@ -102,9 +105,17 @@ class trajectory
 			int n = (int)positions.size();
 			int index = 0;
 
+			// ID and step counts
 			out << "{" << endl;
 			out << "\"id\" : " << id << "," << endl;
 			out << "\"steps\" : " << n << "," << endl;
+
+			// desired location of the pedestrian.
+			// to be used in de-bugging 
+			// NEED TO GET THIS VECTOR FROM THE PEDESTRIAN!
+			out << "\"desired_loc\" : \"" <<
+				desired_loc[0] << " " << desired_loc[1]
+				<< "\"," << endl;
 
 			out << "\"positions\" : [" << endl;
 			for (auto& p : positions)
@@ -164,6 +175,9 @@ class ped
 		// (updated once they should be stopped)
 		bool has_stopped = false;
 
+		// attributes for the behavioral model
+		Vector2d SF_desired_dir;
+
 		ped (int id_in,
 			 Vector4d y_in,
 			 Vector2d desired_loc_in,
@@ -211,11 +225,11 @@ class ped
 
 		void update_desired_dir(bool bh)
 		{
-			if ( not bh ) {
-				Vector2d v = desired_loc - get_pos();
-				desired_dir = v / v.norm();
-			} else {
-				cout << "ERR: implement behavioral functionality!" << endl;
+			Vector2d v = desired_loc - get_pos();
+			desired_dir = v / v.norm();
+			if ( bh )
+			{
+				SF_desired_dir = desired_dir;
 				std::_Exit(EXIT_FAILURE);
 			}
 		}

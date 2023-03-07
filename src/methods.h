@@ -73,62 +73,62 @@ Vector2d interpersonal_force(ped& A,
 
 	// simple versiion
 
-	Vector2d rab = ped_vec_A2B(A, B);
-	double distance = rab.norm();
+	/* Vector2d rab = ped_vec_A2B(A, B); */
+	/* double distance = rab.norm(); */
 
-	return (-V0 / sigma) * exp(-distance/sigma) * rab;
+	/* return (-V0 / sigma) * exp(-distance/sigma) * rab; */
 
 	// simple version end
 
-	/* if ( isnan(b) ) { */
-	/* 	cout << "Err - have nan values! at b" << endl; */
-	/* 	std::_Exit(EXIT_FAILURE); */
-	/* } */
+	if ( isnan(b) ) {
+		cout << "Err - have nan values! at b" << endl;
+		std::_Exit(EXIT_FAILURE);
+	}
 
-	/* double db_pre = 1 / (8 * b); */
-	/* Vector2d rab = ped_vec_A2B(A, B); */
+	double db_pre = 1 / (8 * b);
+	Vector2d rab = ped_vec_A2B(A, B);
 
-	/* // check sign!!! Should be negative since I defined rab to be the opposite */
-	/* // from Helbing and Molnar */
-	/* double pre_factor = -V0 * db_pre * exp(-b/sigma) / sigma; */
+	// check sign!!! Should be negative since I defined rab to be the opposite
+	// from Helbing and Molnar
+	double pre_factor = -V0 * db_pre * exp(-b/sigma) / sigma;
 
-	/* double rx = rab[0]; */
-	/* double ry = rab[1]; */
+	double rx = rab[0];
+	double ry = rab[1];
 
-	/* if ( isnan(rx) or isnan(ry) ) { */
-	/* 	cout << "Err - have nan values! at rx ry" << endl; */
-	/* 	std::_Exit(EXIT_FAILURE); */
-	/* } */
+	if ( isnan(rx) or isnan(ry) ) {
+		cout << "Err - have nan values! at rx ry" << endl;
+		std::_Exit(EXIT_FAILURE);
+	}
 
-	/* Vector2d q = rab - B.get_vel().norm() * dt * B.desired_dir; */
-	/* double qx = q[0]; */
-	/* double qy = q[1]; */
+	Vector2d q = rab - B.get_vel().norm() * dt * B.desired_dir;
+	double qx = q[0];
+	double qy = q[1];
 
-	/* if ( isnan(qx) or isnan(qy) ) { */
-	/* 	cout << "Err - have nan values! at qx qy" << endl; */
-	/* 	std::_Exit(EXIT_FAILURE); */
-	/* } */
+	if ( isnan(qx) or isnan(qy) ) {
+		cout << "Err - have nan values! at qx qy" << endl;
+		std::_Exit(EXIT_FAILURE);
+	}
 
-	/* // directional changes */
-	/* double db_drx =   2 * rx */
-                  /* + 2 * (rx - qx) */
-                  /* + 2 * rx / sqrt(rx*rx + ry*ry) */
-                  /* * sqrt(abs((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy))) */
-                  /* + sqrt(rx*rx + ry*ry) / sqrt(abs(2*(rx - qx))); */
+	// directional changes
+	double db_drx =   2 * rx
+                  + 2 * (rx - qx)
+                  + 2 * rx / sqrt(rx*rx + ry*ry)
+                  * sqrt(abs((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy)))
+                  + sqrt(rx*rx + ry*ry) / sqrt(abs(2*(rx - qx)));
 
-	/* double db_dry =   2 * ry */
-                  /* + 2 * (ry - qy) */
-                  /* + 2 * ry / sqrt(rx*rx + ry*ry) */
-                  /* * sqrt(abs((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy))) */
-                  /* + sqrt(rx*rx + ry*ry) / sqrt(abs(2*(ry - qy))); */
+	double db_dry =   2 * ry
+                  + 2 * (ry - qy)
+                  + 2 * ry / sqrt(rx*rx + ry*ry)
+                  * sqrt(abs((rx - qx)*(rx - qx) + (ry - qy)*(ry - qy)))
+                  + sqrt(rx*rx + ry*ry) / sqrt(abs(2*(ry - qy)));
 
-	/* if (isnan(db_drx) or isnan(db_dry)) { */
-	/* 	cout << "Err - have nan values! at db drxy" << endl; */
-	/* 	std::_Exit(EXIT_FAILURE); */
-	/* } */
+	if (isnan(db_drx) or isnan(db_dry)) {
+		cout << "Err - have nan values! at db drxy" << endl;
+		std::_Exit(EXIT_FAILURE);
+	}
 
-	/* Vector2d F(pre_factor * db_drx, pre_factor * db_dry); */
-	/* return F; */
+	Vector2d F(pre_factor * db_drx, pre_factor * db_dry);
+	return F;
 }
 
 Vector2d border_force(ped& A,
@@ -329,6 +329,7 @@ vector<ped> initialize_pedestrians(int num_peds,
 
 			des_x = ((id+1) % 2) * dx;
 			des_y = uniform(generator);
+			des_y = uniform(generator);
 			/* des_y = dy - (2 + py); */
 
 			// add check that this is not too close to
@@ -418,7 +419,113 @@ void perform_simulation(
 	// write trajectories to file
 	for (auto& p : pedestrians)
 	{
-		p.traj.to_json(p.id, sim_name);
+		p.traj.to_json(p.id, p.desired_loc, sim_name);
 	}
 
 }
+
+double cos_vec(Vector2d A, Vector2d B)
+{
+	// need a different name than the STL "cos"?
+	return A.dot(B) / (A.norm() * B.norm());
+}
+
+vector<double> linspace(double lower, double upper, int n_steps)
+{
+	vector<double> lin;
+	double size = (upper - lower) / double(n_steps-1);
+
+	for (int i = 0; i < n_steps; ++i)
+	{
+		lin.push_back(lower + ((double)(i) * size));
+	}
+	return lin;
+}
+
+double get_theta(Vector2d v)
+{
+	double x = v[0];
+	double y = v[1];
+	double theta = atan( y / x );
+
+	if ( (y < 0) and (x < 0) )
+	{
+		theta += M_PI;
+	} else if ((y > 0) and (x < 0))
+	{
+		theta += M_PI;
+	}
+	return theta;
+}
+
+double zeta_function(vector<ped> &pedestrians,
+                     int index,
+                     double phi)
+{
+	// the distance for the pedestrian pedestrians[index] for
+	// the angle phi. Called zeta function since that's the letter
+	// I used for the function in the proposal. the actual name
+	// varies by source in the literature....
+
+	double zeta = d_max;
+
+	// create a "line" for the line of sight coming from the pedestrian
+	// for the chosen angle.
+
+	// theta is the angle between ped velocity and x axis. This will
+	// be used in the rotation matrix.
+	double theta = get_theta(pedestrians[index].get_vel());
+
+	Matrix2d rotation;
+
+	rotation << cos(theta), -sin(theta),
+			    sin(theta),  cos(theta);
+
+	Vector2d dx(d_max*cos(theta), 0);
+	Vector2d dy(0, d_max*sin(theta));
+
+	dx = rotation * dx;
+	dy = rotation * dy;
+
+	Vector2d line_end = dx + dy;
+
+	point p0 = pedestrians[index].get_point();
+	point p1(line_end[0], line_end[1]);
+
+	line vision_line(p0,p1);
+
+	Vector2d ped_pos = pedestrians[index].get_pos();
+	Vector2d nearest;
+	double dist; // distance from other ped to line
+	double ped_range; // distance from other ped to curr ped
+
+	int curr = 0;
+	for (ped& p : pedestrians)
+	{
+		if ( curr == index )
+		{
+			continue;
+		}
+
+		nearest = nearest_point(p, vision_line);
+		dist = (ped_pos - nearest).norm();
+
+		if ( dist < dist_threshold )
+		{
+			ped_range = (p.get_pos() - ped_pos).norm();
+			if ( ped_range < zeta )
+			{
+				zeta = ped_range;
+			}
+
+
+		}
+		++curr;
+	}
+
+	return zeta;
+}
+
+
+
+
