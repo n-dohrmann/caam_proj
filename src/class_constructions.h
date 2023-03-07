@@ -200,6 +200,7 @@ class ped
 			traj.add_velocity(get_vel());
 		}
 
+
 		Vector2d get_pos()
 		{
 			Vector2d x(y[0],y[1]);
@@ -230,6 +231,8 @@ class ped
 			if ( bh )
 			{
 				SF_desired_dir = desired_dir;
+				// need a way to get global pedestrian information
+				// to this point...
 				std::_Exit(EXIT_FAILURE);
 			}
 		}

@@ -424,6 +424,8 @@ void perform_simulation(
 
 }
 
+// BEHAVIORAL MODEL FUNCTIONS BELOW ///
+
 double cos_vec(Vector2d A, Vector2d B)
 {
 	// need a different name than the STL "cos"?
@@ -458,6 +460,34 @@ double get_theta(Vector2d v)
 	return theta;
 }
 
+line get_vision_line(ped& p, double phi)
+{
+	// create a "line" for the line of sight coming from the pedestrian
+	// for the chosen angle.
+
+	// theta is the angle between ped velocity and x axis. This will
+	// be used in the rotation matrix.
+	double theta = get_theta(p.get_vel());
+
+	Matrix2d rotation;
+
+	rotation << cos(theta), -sin(theta),
+	            sin(theta),  cos(theta);
+
+	Vector2d dx(d_max*cos(theta), 0);
+	Vector2d dy(0, d_max*sin(theta));
+
+	dx = rotation * dx;
+	dy = rotation * dy;
+
+	Vector2d line_end = dx + dy;
+
+	point p0 = p.get_point();
+	point p1(line_end[0], line_end[1]);
+
+	return line(p0,p1);
+}
+
 double zeta_function(vector<ped> &pedestrians,
                      int index,
                      double phi)
@@ -469,35 +499,12 @@ double zeta_function(vector<ped> &pedestrians,
 
 	double zeta = d_max;
 
-	// create a "line" for the line of sight coming from the pedestrian
-	// for the chosen angle.
-
-	// theta is the angle between ped velocity and x axis. This will
-	// be used in the rotation matrix.
-	double theta = get_theta(pedestrians[index].get_vel());
-
-	Matrix2d rotation;
-
-	rotation << cos(theta), -sin(theta),
-			    sin(theta),  cos(theta);
-
-	Vector2d dx(d_max*cos(theta), 0);
-	Vector2d dy(0, d_max*sin(theta));
-
-	dx = rotation * dx;
-	dy = rotation * dy;
-
-	Vector2d line_end = dx + dy;
-
-	point p0 = pedestrians[index].get_point();
-	point p1(line_end[0], line_end[1]);
-
-	line vision_line(p0,p1);
 
 	Vector2d ped_pos = pedestrians[index].get_pos();
 	Vector2d nearest;
 	double dist; // distance from other ped to line
 	double ped_range; // distance from other ped to curr ped
+	line vision_line = get_vision_line(pedestrians[index], phi);
 
 	int curr = 0;
 	for (ped& p : pedestrians)
@@ -517,8 +524,6 @@ double zeta_function(vector<ped> &pedestrians,
 			{
 				zeta = ped_range;
 			}
-
-
 		}
 		++curr;
 	}
@@ -526,6 +531,55 @@ double zeta_function(vector<ped> &pedestrians,
 	return zeta;
 }
 
+double dir_objective_func(vector<ped> &pedestrians,
+                          int index,
+                          double phi)
 
+{
+	double zeta = zeta_function(pedestrians, index, phi);
 
+	// technically bad practice since this function was
+	// already called in the above...
+	line vis_line = get_vision_line(pedestrians[index], phi);
+	double vx = pedestrians[index].y[0] - vis_line.p2.x;
+	double vy = pedestrians[index].y[1] - vis_line.p2.y;
+	double cos_term = cos_vec(Vector2d(vx, vy), pedestrians[index].SF_desired_dir);
 
+	return d_max * d_max + zeta * zeta - 2 * d_max * cos_term;
+}
+
+Vector2d get_bh_direction(vector<ped> &pedestrians,
+                        int index,
+                        int num_angles)
+{
+	// create a list of angles to check, and get the best one
+	// Be sure to return the normalized form!
+	Vector2d best_dir;
+	double best_phi = 0;
+	double best_obj = 1E6;
+	double loc_obj;
+	double dx, dy;
+
+	double phi = pedestrians[index].field_of_view;
+
+	vector<double> angles = linspace(-phi, phi, num_angles);
+
+	for (double a : angles)
+	{
+		loc_obj = dir_objective_func(pedestrians,
+                                     index,
+                                     a);
+
+		if ( loc_obj < best_obj )
+		{
+			best_obj = loc_obj;
+			best_phi = a;
+		}
+	}
+
+	line best_line = get_vision_line(pedestrians[index], best_phi);
+	best_dir[0] = best_line.p2.x - best_line.p1.x;
+	best_dir[1] = best_line.p2.y - best_line.p1.y;
+
+	return best_dir / best_dir.norm();
+}
