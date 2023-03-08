@@ -43,6 +43,8 @@ def animate(i):
         ax.scatter(pos[i][0],pos[i][1],c=col)
         ax.plot([0,50],[-1,-1],"k-")
         ax.plot([0,50],[25,25],"k-")
+        ax.plot([25,25],[25,15], "k-")
+        ax.plot([25,25],[10,-1],"k-")
 
 ani = FuncAnimation(fig, animate, frames=steps,
                     interval=5, repeat=False)

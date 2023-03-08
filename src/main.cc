@@ -11,7 +11,7 @@
  * http://eigen.tuxfamily.org/index.php?title=Main_Page#Download
  */
 
-void trial_simulation(bool behavioral)
+void trial_simulation(bool behavioral, bool doorway)
 {
 	// tester code for a first sample simulation
 	int num_peds = 40;
@@ -19,11 +19,13 @@ void trial_simulation(bool behavioral)
 	string sim_name = "trial_sim";
 
 	// trial parameters from Helbing and Molnar
-	double V0 = 2.1;
-	/* double V0 = 5.0; // higher custom value */
+	/* double V0 = 2.1; */
+	double V0 = 5.0; // higher custom value
+	/* double U0 = 10; */
 	double U0 = 10;
 	double sigma = 0.3;
 	double R = 0.2;
+	/* double R = 0.05; */
 
 	// integration
 	bool Euler = true;
@@ -44,6 +46,21 @@ void trial_simulation(bool behavioral)
 	points.push_back(p2);
 	points.push_back(p3);
 	points.push_back(p4);
+
+	if ( doorway )
+	{
+		// initialize points for the walls to make a doorway
+		point w1(25,25);
+		points.push_back(w1);
+		point w2(25,15);
+		points.push_back(w2);
+
+		point w3(25,10);
+		points.push_back(w3);
+		point w4(25,-1);
+		points.push_back(w4);
+
+	}
 
 	vector<line> borders = initialize_borders(points);
 
@@ -70,9 +87,10 @@ void trial_simulation(bool behavioral)
 	cout << "Done!" << endl;
 }
 
+
 int main(int argc, char** argv) {
 
-	/* trial_simulation(true); */
+	trial_simulation(false, true);
 
 	/* point b1(0,25); */
 	/* point b2(50,25); */
@@ -86,21 +104,21 @@ int main(int argc, char** argv) {
 	/* Vector2d dd = vanilla_des_dir(p); */
 	/* cout << "dd:\n" << dd << endl; */
 
-	ped p(1,Vector4d(10,10,1,1),Vector2d(11,11),1.3,1.4,100,false);
-	ped p2(2,Vector4d(12,12,1,0),Vector2d(11,11),1.3,1.4,100,false);
+	/* ped p(1,Vector4d(10,10,1,1),Vector2d(11,11),1.3,1.4,100,false); */
+	/* ped p2(2,Vector4d(12,12,1,0),Vector2d(11,11),1.3,1.4,100,false); */
 
-	vector<ped> pedestrians;
-	pedestrians.push_back(p);
-	pedestrians.push_back(p2);
+	/* vector<ped> pedestrians; */
+	/* pedestrians.push_back(p); */
+	/* pedestrians.push_back(p2); */
 
-	line l = get_vision_line(p, 0);
+	/* line l = get_vision_line(p, 0); */
 
-	// zeta testing
-	double z1 = zeta_function(pedestrians, 0, 0);
-	double z2 = zeta_function(pedestrians, 0, M_PI / 6);
+	/* // zeta testing */
+	/* double z1 = zeta_function(pedestrians, 0, 0); */
+	/* double z2 = zeta_function(pedestrians, 0, M_PI / 6); */
 
-	cout << "this is z1: " << z1 << endl;
-	cout << "this is z2: " << z2 << endl;
+	/* cout << "this is z1: " << z1 << endl; */
+	/* cout << "this is z2: " << z2 << endl; */
 
 	return 0;
 
