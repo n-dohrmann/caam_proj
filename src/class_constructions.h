@@ -25,7 +25,7 @@ const double RELAX_TIME = 0.5E0;
 const double dt = 2.5E-1;
 const double stop_threshold = 0.5E0;
 const double d_max = 5.0E0;
-const double dist_threshold = 0.1E0;
+const double dist_threshold = 5.0E-2;
 const double num_angles = 100;
 /* #define M_PI           3.14159265358979323846 */
 //

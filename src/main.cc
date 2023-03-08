@@ -72,7 +72,35 @@ void trial_simulation(bool behavioral)
 
 int main(int argc, char** argv) {
 
-	trial_simulation(false);
+	/* trial_simulation(true); */
+
+	/* point b1(0,25); */
+	/* point b2(50,25); */
+
+	/* line l(b1,b2); */
+
+	/* Vector2d nearest = nearest_point(p,l); */
+
+	/* cout << "nearest\n" << nearest << endl; */
+
+	/* Vector2d dd = vanilla_des_dir(p); */
+	/* cout << "dd:\n" << dd << endl; */
+
+	ped p(1,Vector4d(10,10,1,1),Vector2d(11,11),1.3,1.4,100,false);
+	ped p2(2,Vector4d(12,12,1,0),Vector2d(11,11),1.3,1.4,100,false);
+
+	vector<ped> pedestrians;
+	pedestrians.push_back(p);
+	pedestrians.push_back(p2);
+
+	line l = get_vision_line(p, 0);
+
+	// zeta testing
+	double z1 = zeta_function(pedestrians, 0, 0);
+	double z2 = zeta_function(pedestrians, 0, M_PI / 6);
+
+	cout << "this is z1: " << z1 << endl;
+	cout << "this is z2: " << z2 << endl;
 
 	return 0;
 

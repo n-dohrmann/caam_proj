@@ -12,7 +12,7 @@ Vector2d ped_vec_A2B(ped pedA, ped pedB)
 	return pedB.get_pos() - pedA.get_pos();
 }
 
-Vector2d nearest_point(ped p, line l)
+Vector2d nearest_point(ped& p, line& l)
 {
 	// returns the nearest point of
 	// line l to pedestrian p.
@@ -63,9 +63,11 @@ Vector2d drift_acc(ped& p,
                    int index,
 				   int num_angles)
 {
-	/* p.update(); */
+	p.update();
 	Vector2d best_dir = get_bh_direction(pedestrians, index, num_angles);
 	p.update(best_dir.normalized());
+	p.desired_dir = best_dir.normalized();
+
 
 	Vector2d difference = p.desired_speed * p.desired_dir.normalized() 
 		- p.get_vel();
@@ -168,7 +170,8 @@ Vector2d border_force(ped& A,
 	// points from nearest to the pedestrian A
 	Vector2d border_2_A = A.get_pos() - nearest;
 
-	return (U0 / R) * exp(-distance/R) * border_2_A;
+	// check sign!
+	return -(U0 / R) * exp(-distance/R) * border_2_A;
 }
 
 double w_adjustment(Vector2d& e, Vector2d& f, double phi)
@@ -205,10 +208,11 @@ Vector2d total_force_calc(ped& p,
 	// force symmetries where that can be done, but this implementation will
 	// take the longer, more expensive route for simplicity.
 	Vector2d force(0.0,0.0);
+	Vector2d temp_force(0.0,0.0);
 
 	// add drift acceleration
 	if ( p.behavioral ) {
-		force = drift_acc(p, pedestrians, index, 50);
+		force = drift_acc(p, pedestrians, index, 100);
 	} else {
 		force = drift_acc(p);
 	}
@@ -226,7 +230,7 @@ Vector2d total_force_calc(ped& p,
 			continue;
 		}
 
-		Vector2d temp_force = interpersonal_force(p, pedestrians[i], V0, sigma);
+		temp_force = interpersonal_force(p, pedestrians[i], V0, sigma);
 		force = force 
 			    + w_adjustment(p.desired_dir, temp_force, p.field_of_view) 
 				* temp_force;
@@ -234,7 +238,7 @@ Vector2d total_force_calc(ped& p,
 
 	// get all pedestrian-border forces
 	for (unsigned long i = 0; i < borders.size(); ++i) {
-		Vector2d temp_force = border_force(p, borders[i], U0, R);
+		temp_force = border_force(p, borders[i], U0, R);
 		force = force 
 			    + (w_adjustment(p.desired_dir, temp_force, p.field_of_view) 
 				* temp_force);
@@ -281,16 +285,25 @@ void integrator(vector<ped> &pedestrians,
 	if ( Euler ) {
 		for (ped& p : pedestrians) {
 
+			// alt solution is just reducing the number of frames
 			if ( not p.has_stopped )
 			{
+
 				// update the position vector
 				p.y[0] += p.y[2] * dt;
 				p.y[1] += p.y[3] * dt;
 
-				// make sure to enforce the speed limit
+				// make extra sure to enforce the speed limit
 				double g = g_parameter(p, p.get_vel());
 				p.y[2] += forces[index][0] * g * dt;
 				p.y[3] += forces[index][1] * g * dt;
+
+				p.update_current_speed();
+				if (p.current_speed > p.max_speed)
+				{
+					p.y[2] *= p.max_speed / (pow(p.current_speed, 2));
+					p.y[3] *= p.max_speed / (pow(p.current_speed, 2));
+				}
 
 				if ( (p.y[3] / abs(p.y[2]) >= 10 ) )
 				{
@@ -343,8 +356,8 @@ vector<ped> initialize_pedestrians(int num_peds,
 	double gen_desired_speed;
 	double px, py, vx, vy, des_x, des_y;
 	double max_speed;
-	// standardized value for the field of view
-	double fov = 100;
+	// standardized value for the field of view - needs to be in radians!!!!!!!
+	double fov = M_PI * 100/180;
 
 	if ( long_hallway ) {
 		for (int id = 0; id < num_peds; ++id)
@@ -431,7 +444,7 @@ void perform_simulation(
 	//
 	
 	// this might not be used, but it will be reported in the output.
-	double total_time = time_steps * dt;
+	/* double total_time = time_steps * dt; */
 
 	for (int time = 0; time < time_steps; ++time)
 	{
@@ -489,6 +502,11 @@ double get_theta(Vector2d v)
 	return theta;
 }
 
+Vector2d vanilla_des_dir(ped& p)
+{
+	return (p.desired_loc - p.get_pos()).normalized();
+}
+
 line get_vision_line(ped& p, double phi)
 {
 	// create a "line" for the line of sight coming from the pedestrian
@@ -496,15 +514,17 @@ line get_vision_line(ped& p, double phi)
 
 	// theta is the angle between ped velocity and x axis. This will
 	// be used in the rotation matrix.
-	double theta = get_theta(p.get_vel());
+	/* double theta = get_theta(p.get_vel()); */
+	Vector2d van_des_dir = vanilla_des_dir(p);
+	double theta = get_theta(van_des_dir);
 
 	Matrix2d rotation;
 
 	rotation << cos(theta), -sin(theta),
 	            sin(theta),  cos(theta);
 
-	Vector2d dx(d_max*cos(theta), 0);
-	Vector2d dy(0, d_max*sin(theta));
+	Vector2d dx(d_max*cos(phi), 0);
+	Vector2d dy(0, d_max*sin(phi));
 
 	dx = rotation * dx;
 	dy = rotation * dy;
@@ -528,21 +548,24 @@ double zeta_function(vector<ped> &pedestrians,
 
 	double zeta = d_max;
 
-
 	Vector2d ped_pos = pedestrians[index].get_pos();
-	Vector2d nearest;
+
+	// check initialization
+	Vector2d nearest(0.0,0.0);
 	double dist; // distance from other ped to line
 	double ped_range; // distance from other ped to curr ped
 	line vision_line = get_vision_line(pedestrians[index], phi);
 
-	int curr = 0;
+	int curr = -1;
 	for (ped& p : pedestrians)
 	{
-		if ( curr == index )
+		++curr;
+		if ( p.id == pedestrians[index].id )
 		{
 			continue;
 		}
 
+		/* cout << "hit!" << endl; */
 		nearest = nearest_point(p, vision_line);
 		dist = (ped_pos - nearest).norm();
 
@@ -554,7 +577,6 @@ double zeta_function(vector<ped> &pedestrians,
 				zeta = ped_range;
 			}
 		}
-		++curr;
 	}
 
 	return zeta;
@@ -572,9 +594,10 @@ double dir_objective_func(vector<ped> &pedestrians,
 	line vis_line = get_vision_line(pedestrians[index], phi);
 	double vx = pedestrians[index].y[0] - vis_line.p2.x;
 	double vy = pedestrians[index].y[1] - vis_line.p2.y;
-	double cos_term = cos_vec(Vector2d(vx, vy), pedestrians[index].SF_desired_dir);
+	Vector2d van_des_dir = vanilla_des_dir(pedestrians[index]);
+	double cos_term = cos_vec(Vector2d(vx, vy), van_des_dir);
 
-	return d_max * d_max + zeta * zeta - 2 * d_max * cos_term;
+	return zeta * zeta - 2 * d_max * cos_term;
 }
 
 Vector2d get_bh_direction(vector<ped> &pedestrians,
