@@ -170,7 +170,7 @@ Vector2d border_force(ped& A,
 	// points from nearest to the pedestrian A
 	Vector2d border_2_A = A.get_pos() - nearest;
 
-	// check sign!
+	// check sign! the sign is negated somewhere else?
 	return -(U0 / R) * exp(-distance/R) * border_2_A;
 }
 

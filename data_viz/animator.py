@@ -5,7 +5,7 @@ import pandas as pd
 import json
 import pickle as pkl
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FuncAnimation, PillowWriter
 import os
 
 
@@ -48,3 +48,7 @@ ani = FuncAnimation(fig, animate, frames=steps,
                     interval=5, repeat=False)
 
 plt.show()
+
+# save animation
+ani.save("trajectory.gif", dpi=100, writer=PillowWriter(fps=5))
+print("Done!")

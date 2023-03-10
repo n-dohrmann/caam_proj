@@ -19,13 +19,12 @@ void trial_simulation(bool behavioral, bool doorway)
 	string sim_name = "trial_sim";
 
 	// trial parameters from Helbing and Molnar
-	/* double V0 = 2.1; */
-	double V0 = 5.0; // higher custom value
-	/* double U0 = 10; */
+	double V0 = 2.1;
+	/* double V0 = 5.0; // higher custom value */
 	double U0 = 10;
+	/* double U0 = 50; */
 	double sigma = 0.3;
-	double R = 0.2;
-	/* double R = 0.05; */
+	double R = 0.2; // check dependence on time scale
 
 	// integration
 	bool Euler = true;
@@ -90,7 +89,7 @@ void trial_simulation(bool behavioral, bool doorway)
 
 int main(int argc, char** argv) {
 
-	trial_simulation(false, true);
+	trial_simulation(false, false);
 
 	/* point b1(0,25); */
 	/* point b2(50,25); */
